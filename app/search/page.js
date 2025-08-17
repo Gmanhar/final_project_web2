@@ -31,11 +31,10 @@ function toInt(v, def = 1) {
 }
 
 export default async function SearchPage({ searchParams }) {
-  const q      = (searchParams?.q      || '').trim();
-  const genre  = (searchParams?.genre  || '').trim();
-  const page   = toInt(searchParams?.page, 1);
+  const q = (searchParams?.q || '').trim();
+  const genre = (searchParams?.genre || '').trim();
+  const page = toInt(searchParams?.page, 1);
 
-  // No query or genre
   if (!q && !genre) {
     return (
       <>
@@ -45,60 +44,70 @@ export default async function SearchPage({ searchParams }) {
     );
   }
 
-  let title      = 'Results';
-  let movies     = [];
+  let title = 'Results';
+  let movies = [];
   let totalPages = 1;
 
   if (genre) {
-    // Random 50 picks for genre
+    // random 50 picks for genre (no pagination)
     movies = await discoverGenreRandom50(genre, 50);
     const label = GENRE_LABELS[genre] || `Genre ${genre}`;
     title = `Random ${label} Movies`;
   } else {
-    // Paginated keyword search
+    // paginated keyword search
     const { results, appTotalPages } = await searchMovies50(q, page);
-    movies     = results;
+    movies = results;
     totalPages = appTotalPages;
-    title      = `Search: “${q}”`;
+    title = `Search: “${q}”`;
   }
 
   return (
     <>
-      <h1 style={{ marginBottom: 12 }}>{title}</h1>
+      {/* Title + optional regenerate when viewing a genre */}
+<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+  <h1 style={{ margin: 0 }}>{title}</h1>
+
+  {genre && (
+    <button
+      type="button"
+      className="regen-button"
+      data-resetpage
+      title="Regenerate random movies"
+      aria-label="Regenerate random movies"
+      style={{
+        padding: '8px 12px',
+        borderRadius: 8,
+        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(255,255,255,0.03)',
+        cursor: 'pointer',
+        fontWeight: 700,
+      }}
+    >
+      ↻ Regenerate
+    </button>
+  )}
+</div>
 
       {movies.length === 0 ? (
         <p>No results.</p>
       ) : (
         <>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px,1fr))',
-              gap: 16,
-              marginBottom: 16,
-            }}
-          >
+          <div className="movie-grid">
             {movies.map((m) => (
               <Link
                 key={m.id}
                 href={`/movie?id=${m.id}`}
-                style={{
-                  border: '1px solid #333',
-                  borderRadius: 8,
-                  overflow: 'hidden',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  background: '#151515',
-                }}
+                className="movie-card"
+                aria-label={`Open details for ${m.title}`}
               >
                 <img
+                  className="movie-card-image"
                   src={posterUrl(m.poster_path)}
                   alt={`${m.title} poster`}
-                  style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover' }}
                 />
-                <div style={{ padding: 10 }}>
-                  <h3 style={{ margin: '0 0 4px' }}>{m.title}</h3>
-                  <p style={{ opacity: 0.7, margin: 0 }}>
+                <div className="movie-card-content">
+                  <h3 className="movie-card-title">{m.title}</h3>
+                  <p className="movie-card-year">
                     {(m.release_date || '').slice(0, 4) || '—'}
                   </p>
                 </div>
@@ -121,68 +130,54 @@ function Pagination({ q, page, totalPages }) {
   const next = page < totalPages ? page + 1 : null;
   const span = 2;
   const start = Math.max(1, page - span);
-  const end   = Math.min(totalPages, page + span);
+  const end = Math.min(totalPages, page + span);
   const pages = [];
   for (let p = start; p <= end; p++) pages.push(p);
 
+  const base = (p) => `/search?q=${encodeURIComponent(q)}&page=${p}`;
+
   const linkStyle = {
     padding: '8px 12px',
-    border: '1px solid #333',
+    border: '1px solid rgba(255,255,255,0.06)',
     borderRadius: 6,
     textDecoration: 'none',
     color: 'inherit',
-    background: '#151515',
+    background: 'rgba(10,10,10,0.30)',
   };
-  const activeStyle = { ...linkStyle, background: '#222', fontWeight: 700 };
+  const activeStyle = { ...linkStyle, background: 'rgba(15,15,15,0.6)', fontWeight: 700 };
 
   return (
     <nav style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
       {prev ? (
-        <Link href={`/search?q=${encodeURIComponent(q)}&page=${prev}`} style={linkStyle}>
-          ‹ Prev
-        </Link>
+        <Link href={base(prev)} style={linkStyle}>‹ Prev</Link>
       ) : (
         <span style={{ opacity: 0.4, ...linkStyle }}>‹ Prev</span>
       )}
 
       {start > 1 && (
         <>
-          <Link href={`/search?q=${encodeURIComponent(q)}&page=1`} style={linkStyle}>
-            1
-          </Link>
+          <Link href={base(1)} style={linkStyle}>1</Link>
           {start > 2 && <span style={{ padding: '0 4px', opacity: 0.6 }}>…</span>}
         </>
       )}
 
       {pages.map((p) =>
         p === page ? (
-          <span key={p} style={activeStyle}>
-            {p}
-          </span>
+          <span key={p} style={activeStyle}>{p}</span>
         ) : (
-          <Link
-            key={p}
-            href={`/search?q=${encodeURIComponent(q)}&page=${p}`}
-            style={linkStyle}
-          >
-            {p}
-          </Link>
+          <Link key={p} href={base(p)} style={linkStyle}>{p}</Link>
         )
       )}
 
       {end < totalPages && (
         <>
           {end < totalPages - 1 && <span style={{ padding: '0 4px', opacity: 0.6 }}>…</span>}
-          <Link href={`/search?q=${encodeURIComponent(q)}&page=${totalPages}`} style={linkStyle}>
-            {totalPages}
-          </Link>
+          <Link href={base(totalPages)} style={linkStyle}>{totalPages}</Link>
         </>
       )}
 
       {next ? (
-        <Link href={`/search?q=${encodeURIComponent(q)}&page=${next}`} style={linkStyle}>
-          Next ›
-        </Link>
+        <Link href={base(next)} style={linkStyle}>Next ›</Link>
       ) : (
         <span style={{ opacity: 0.4, ...linkStyle }}>Next ›</span>
       )}
