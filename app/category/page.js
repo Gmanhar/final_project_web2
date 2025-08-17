@@ -1,3 +1,4 @@
+// app/page.js  (server)
 import Link from 'next/link';
 
 const GENRE_CATS = [
@@ -38,15 +39,7 @@ const inputStyle = {
   border: '1px solid #333',
   background: '#151515',
   color: '#eee',
-};
-
-const chipStyle = {
-  padding: '10px 14px',
-  borderRadius: 999,
-  border: '1px solid #333',
-  backgroundColor: 'rgba(0,0,0,0.6)',
-  color: '#eee',
-  textDecoration: 'none',
+  outline: 'none',
 };
 
 export default function Home() {
@@ -87,14 +80,24 @@ export default function Home() {
             aria-label="Search movies"
             style={inputStyle}
           />
-          <button type="submit" style={{ padding: '12px 16px', borderRadius: 8 }}>
+
+          {/* unified button style: use the .btn class from globals.css */}
+          <button type="submit" className="btn" aria-label="Search">
             Search
           </button>
         </form>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
           {GENRE_CATS.map((g) => (
-            <Link key={g.id} href={`/search?genre=${g.id}`} style={chipStyle}>
+            // Use header-control so the chips visually match header controls/back button
+            <Link
+              key={g.id}
+              href={`/search?genre=${g.id}`}
+              className="header-control"
+              aria-label={`Browse ${g.label} movies`}
+              title={g.label}
+              style={{ textDecoration: 'none' }}
+            >
               {g.label}
             </Link>
           ))}
