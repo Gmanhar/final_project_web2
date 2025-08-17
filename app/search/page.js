@@ -1,5 +1,5 @@
-// app/search/page.js
 import Link from 'next/link';
+import RegenerateReloadButton from '@/app/components/RegenerateReloadButton';
 import { searchMovies50, discoverGenreRandom50, posterUrl } from '@/lib/tmdb';
 
 // Map TMDB genre IDs to human labels
@@ -31,11 +31,19 @@ function toInt(v, def = 1) {
 }
 
 export default async function SearchPage({ searchParams }) {
-  const q = (searchParams?.q || '').trim();
-  const genre = (searchParams?.genre || '').trim();
-  const page = toInt(searchParams?.page, 1);
+  
+  const sp = await searchParams;
 
-  if (!q && !genre) {
+  // normalize potential repeated query params (arrays)
+  const rawQ = sp?.q;
+  const rawGenre = sp?.genre;
+  const rawPage = sp?.page;
+
+  const q = (Array.isArray(rawQ) ? rawQ[0] : rawQ || '').trim();
+  const genreRaw = (Array.isArray(rawGenre) ? rawGenre[0] : rawGenre || '').trim();
+  const page = toInt(Array.isArray(rawPage) ? rawPage[0] : rawPage, 1);
+
+  if (!q && !genreRaw) {
     return (
       <>
         <h1 style={{ marginBottom: 12 }}>Results</h1>
@@ -48,71 +56,73 @@ export default async function SearchPage({ searchParams }) {
   let movies = [];
   let totalPages = 1;
 
-  if (genre) {
+  if (genreRaw) {
+      const genreId = Number.isFinite(Number(genreRaw)) ? Number(genreRaw) : genreRaw;
     // random 50 picks for genre (no pagination)
-    movies = await discoverGenreRandom50(genre, 50);
-    const label = GENRE_LABELS[genre] || `Genre ${genre}`;
+    movies = await discoverGenreRandom50(genreId, 50);
+    const label = GENRE_LABELS[genreRaw] || `Genre ${genreRaw}`;
     title = `Random ${label} Movies`;
   } else {
     // paginated keyword search
     const { results, appTotalPages } = await searchMovies50(q, page);
-    movies = results;
-    totalPages = appTotalPages;
+    movies = results || [];
+    totalPages = appTotalPages || 1;
     title = `Search: “${q}”`;
   }
 
   return (
     <>
       {/* Title + optional regenerate when viewing a genre */}
-<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-  <h1 style={{ margin: 0 }}>{title}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <h1 style={{ margin: 0 }}>{title}</h1>
 
-  {genre && (
-    <button
-      type="button"
-      className="regen-button"
-      data-resetpage
-      title="Regenerate random movies"
-      aria-label="Regenerate random movies"
-      style={{
-        padding: '8px 12px',
-        borderRadius: 8,
-        border: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(255,255,255,0.03)',
-        cursor: 'pointer',
-        fontWeight: 700,
-      }}
-    >
-      ↻ Regenerate
-    </button>
-  )}
-</div>
+        {genreRaw && (
+          <div style={{ marginLeft: 'auto' }}>
+            <RegenerateReloadButton
+              style={{
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.03)',
+                cursor: 'pointer',
+                fontWeight: 700,
+              }}
+            />
+          </div>
+        )}
+      </div>
 
       {movies.length === 0 ? (
         <p>No results.</p>
       ) : (
         <>
           <div className="movie-grid">
-            {movies.map((m) => (
-              <Link
-                key={m.id}
-                href={`/movie?id=${m.id}`}
-                className="movie-card"
-                aria-label={`Open details for ${m.title}`}
-              >
-                <img
-                  className="movie-card-image"
-                  src={posterUrl(m.poster_path)}
-                  alt={`${m.title} poster`}
-                />
-                <div className="movie-card-content">
-                  <h3 className="movie-card-title">{m.title}</h3>
-                  <p className="movie-card-year">
-                    {(m.release_date || '').slice(0, 4) || '—'}
-                  </p>
-                </div>
-              </Link>
-            ))}
+            {movies.map((m) => {
+              const imgSrc = m.poster_path ? posterUrl(m.poster_path) : '/poster-placeholder.png';
+              const altText = m.title ? `${m.title} poster` : 'Movie poster';
+
+              return (
+                <Link
+                  key={m.id}
+                  href={`/movie?id=${m.id}`}
+                  className="movie-card"
+                  aria-label={`Open details for ${m.title}`}
+                >
+                  <img
+                    className="movie-card-image"
+                    src={imgSrc}
+                    alt={altText}
+                    loading="lazy"
+                  />
+                  <div className="movie-card-content">
+                    <h3 className="movie-card-title">{m.title}</h3>
+                    <p className="movie-card-year">
+                      {(m.release_date || '').slice(0, 4) || '—'}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
 
           {/* Pagination only for keyword searches */}

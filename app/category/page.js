@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-const genreCats = [
+const GENRE_CATS = [
   { id: 28, label: 'Action' },
   { id: 12, label: 'Adventure' },
   { id: 16, label: 'Animation' },
@@ -22,22 +22,42 @@ const genreCats = [
   { id: 37, label: 'Western' },
 ];
 
+const containerStyle = {
+  minHeight: '70vh',
+  display: 'grid',
+  placeItems: 'center',
+  textAlign: 'center',
+  padding: 24,
+};
+
+const innerStyle = { maxWidth: 680, width: '100%' };
+
+const inputStyle = {
+  padding: '12px 14px',
+  borderRadius: 8,
+  border: '1px solid #333',
+  background: '#151515',
+  color: '#eee',
+};
+
+const chipStyle = {
+  padding: '10px 14px',
+  borderRadius: 999,
+  border: '1px solid #333',
+  backgroundColor: 'rgba(0,0,0,0.6)',
+  color: '#eee',
+  textDecoration: 'none',
+};
+
 export default function Home() {
   return (
-    <section
-      style={{
-        minHeight: '70vh',
-        display: 'grid',
-        placeItems: 'center',
-        textAlign: 'center',
-        padding: 24,
-      }}
-    >
-      <div style={{ maxWidth: 680, width: '100%' }}>
+    <section style={containerStyle}>
+      <div style={innerStyle}>
         <h1 style={{ marginBottom: 16, fontSize: 32 }}>Find your next movie</h1>
 
         <form
           action="/search"
+          method="get"
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr auto',
@@ -45,44 +65,36 @@ export default function Home() {
             margin: '0 auto 18px',
           }}
         >
+          {/* accessible, visually-hidden label */}
+          <label
+            htmlFor="q"
+            style={{
+              position: 'absolute',
+              left: '-10000px',
+              top: 'auto',
+              width: '1px',
+              height: '1px',
+              overflow: 'hidden',
+            }}
+          >
+            Search movies
+          </label>
+
           <input
+            id="q"
             name="q"
             placeholder="Search movies…"
             aria-label="Search movies"
-            style={{
-              padding: '12px 14px',
-              borderRadius: 8,
-              border: '1px solid #333',
-              background: '#151515',
-              color: '#eee',
-            }}
+            style={inputStyle}
           />
           <button type="submit" style={{ padding: '12px 16px', borderRadius: 8 }}>
             Search
           </button>
         </form>
 
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 10,
-            justifyContent: 'center',
-          }}
-        >
-          {genreCats.map((g) => (
-            <Link
-              key={g.id}
-              href={`/search?genre=${g.id}`}
-              style={{
-                padding: '10px 14px',
-                borderRadius: 999,
-                border: '1px solid #333',
-                background: '#151515',
-                textDecoration: 'none',
-                color: 'inherit',
-              }}
-            >
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+          {GENRE_CATS.map((g) => (
+            <Link key={g.id} href={`/search?genre=${g.id}`} style={chipStyle}>
               {g.label}
             </Link>
           ))}
