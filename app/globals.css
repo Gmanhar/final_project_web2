@@ -225,5 +225,37 @@ h3 { font-size: 1rem; font-weight: 600; }
   transform: none;
   box-shadow: none;
 }
+.bubble-btn {
+  border-radius: 999px;  
+  padding: 6px 18px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Filled style (Create account) */
+.create-btn {
+  background: #007bff;
+  color: #fff;
+  border: none;
+}
+.create-btn:hover:not(:disabled) {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Outlined style (Have an account?) */
+.have-btn {
+  background: transparent;
+  color: #007bff;
+  border: 2px solid #007bff;
+}
+.have-btn:hover:not(:disabled) {
+  background: #007bff;
+  color: #fff;
+  transform: scale(1.05);
+}
+
 
 
